@@ -1,0 +1,357 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>FON</title>
+</head>
+
+
+<body>
+
+<canvas id="myCanvas" width="0" height="0"></canvas>
+
+<script type="text/javascript">
+	// preset: ui related
+	var c=document.getElementById("myCanvas");
+	c.width = document.body.clientWidth;
+	c.height = 576;
+	var ctx=c.getContext("2d");
+
+	var bkg = new Image();
+	bkg.src = "BKG003.PNG";
+	bkg_x = (c.width - c.height/9*16)/2;
+	var eos_cell = new Image();
+	eos_cell.src = "EOS002.PNG";
+	var oceanus_cell = new Image();
+	oceanus_cell.src = "OCE002.PNG";
+	var hyperion_cell = new Image();
+	hyperion_cell.src = "HYP.PNG";
+	var atlas_cell = new Image();
+	atlas_cell.src = "ATL003.PNG";
+
+	var orange = "rgb(238, 127, 45)";
+	var blue = "rgb(20, 100, 190)";  // 15 77 146
+	var red = "rgb(215, 32, 33)";  // 179 27 27
+	var green = "rgb(0, 182, 74)";  // 0 152 62
+	var white = "rgb(255, 255, 255)";
+	var black = "rgb(0, 0, 0)";
+
+	function drwCircle(x, y, r, ifFill){
+		ctx.beginPath();
+		ctx.arc(x, y, r, 0, 2*Math.PI);
+		ctx.closePath();
+		ctx.stroke();
+		if (ifFill){
+			ctx.fill();
+		}
+	}
+
+	// preset: computations related
+	function linear_random(lb, rb){
+		return Math.random()*(rb-lb)+lb;
+	}
+
+	var shape = [
+		[[0, 0], [0, 1], [1, 0], [1, 1]],
+
+		[[0, 0], [0, 1], [0, 2], [0, 3]],
+		[[0, 0], [1, 0], [2, 0], [3, 0]],
+
+		[[0, 0], [1, 0], [1, 1], [2, 1]],
+		[[0, 1], [1, 1], [1, 0], [2, 0]],
+		[[0, 0], [0, 1], [1, 1], [1, 2]],
+		[[1, 0], [1, 1], [0, 1], [0, 2]],
+
+		[[0, 0], [1, 0], [2, 0], [1, 1]],
+		[[0, 1], [1, 1], [2, 1], [1, 0]],
+		[[0, 0], [0, 1], [0, 2], [1, 1]],
+		[[0, 1], [1, 0], [1, 1], [1, 2]],
+
+		[[0, 0], [0, 1], [0, 2], [1, 0]],
+		[[0, 0], [0, 1], [0, 2], [1, 2]],
+		[[1, 0], [1, 1], [1, 2], [0, 0]],
+		[[1, 0], [1, 1], [1, 2], [0, 2]],
+
+		[[0, 0], [1, 0], [2, 0], [0, 1]],
+		[[0, 0], [1, 0], [2, 0], [2, 1]],
+		[[0, 1], [1, 1], [2, 1], [0, 0]],
+		[[0, 1], [1, 1], [2, 1], [2, 0]]
+	];
+
+	// shapeid, x, target_y; here x is written in relative value instead of absolute
+	var setO = [
+		[0, 0, 2], [2, 2, 1], [18, 6, 2], [4, 6, 3], [0, 4, 3], [1, 3, 5],
+		[10, 1, 4], [9, 0, 5], [0, 1, 6], [14, 7, 6], [11, 6, 5], [14, 4, 6], 
+		[10, 3, 7], [15, 0, 7], [6, 7, 8], [10, 5, 8], [7, 6, 9], [14, 4, 10], 
+		[5, 2, 9], [11, 1, 10], [0, 3, 10], [1, 0, 11], [8, 1, 12], [5, 5, 12], 
+		[14, 7, 12], [0, 0, 13], [11, 7, 13], [5, 5, 14], [1, 4, 14], [10, 2, 14]
+	];
+	var setH = [
+		[17, 0, 2], [18, 4, 2], [14, 7, 3], [9, 3, 3], [0, 1, 3], [10, 4, 4], 
+		[5, 6, 4], [8, 1, 5], [7, 3, 5], [11, 0, 5], [14, 7, 6], [12, 6, 7], 
+		[2, 0, 6], [16, 2, 7], [0, 0, 8], [6, 7, 8], [4, 6, 9], [17, 2, 9], 
+		[1, 5, 9], [12, 3, 11], [14, 0, 11], [16, 4, 10], [0, 7, 11], [13, 1, 12], 
+		[3, 3, 12], [7, 5, 12], [16, 6, 13], [0, 4, 14], [18, 1, 14], [1, 0, 13]	
+	];
+	var setA = [
+		[8, 0, 2], [3, 2, 2], [18, 6, 2], [4, 6, 3], [11, 5, 3], [10, 3, 4], 
+		[9, 0, 4], [6, 2, 5], [3, 4, 5], [14, 7, 6], [0, 6, 6], [8, 3, 7], 
+		[6, 1, 6], [6, 0, 7], [18, 6, 8], [3, 1, 8], [16, 3, 8], [0, 6, 9],
+		[2, 2, 9], [11, 0, 9], [10, 7, 11], [17, 4, 11], [0, 1, 11], [13, 2, 12],
+		[1, 0, 13], [15, 1, 13], [5, 4, 13], [0, 6, 12], [16, 6, 13], [16, 3, 14]
+	];
+	var setE = [
+		[0, 0, 2], [0, 3, 2], [11, 2, 3], [2, 5, 1], [18, 6, 3], [9, 5, 4], 
+		[4, 0, 4], [5, 3, 5], [6, 7, 5], [7, 5, 5], [9, 0, 6], [7, 3, 6], 
+		[5, 1, 7], [18, 6, 7], [2, 3, 7], [16, 5, 8], [0, 3, 9], [10, 1, 9], 
+		[1, 0, 10], [8, 5, 10], [13, 7, 10], [6, 1, 11], [0, 3, 11], [15, 5, 11], 
+		[10, 7, 13], [12, 0, 13], [0, 1, 13], [2, 3, 12], [2, 4, 13], [15, 3, 14]
+	];
+	
+	function findSize(shapeid){
+		var rtn = [0, 0];
+		var shape_ = shape[shapeid];
+		for (var i=0; i<shape_.length; i++){
+			if (shape_[i][0] > rtn[0]){
+				rtn[0] = shape_[i][0];
+			}
+			if (shape_[i][1] > rtn[1]){
+				rtn[1] = shape_[i][1];
+			}
+		}
+		return [rtn[0]+1, rtn[1]+1];
+	}
+
+	// pop animation
+	// adjustable coefficients
+	var num_particle = 24;
+	var small_ratio = 0.75;
+	var big_ratio = 1.25;
+	var deviation_ratio = 0.2;
+	var radius_start = 0.2;
+	// body
+	var particle_list = [];
+	var ring_list = [];
+	function pop_init(x, y, radius_ring, radius_particle, width_ring, color_ring, color_particle, duration){
+		for (var i=0; i<num_particle; i++){
+			particle_list.push({"x": x, "y": y, "r": linear_random(small_ratio, big_ratio)*radius_particle});
+			var saver = Math.random()*deviation_ratio*radius_ring;
+			var theta =  Math.random()*Math.PI*2;
+			var distance = linear_random(1-deviation_ratio, 1+deviation_ratio) - saver/radius_ring;
+			particle_list[particle_list.length-1]["color"] = color_particle;
+			particle_list[particle_list.length-1]["x"] += Math.cos(theta)*saver;
+			particle_list[particle_list.length-1]["y"] += Math.sin(theta)*saver;
+			particle_list[particle_list.length-1]["dx"] = Math.cos(theta)*distance*radius_ring/duration/60;
+			particle_list[particle_list.length-1]["dy"] = Math.sin(theta)*distance*radius_ring/duration/60;	
+			particle_list[particle_list.length-1]["dr"] = radius_particle/duration/60;
+		}
+		ring_list.push({"r": radius_start*radius_ring, "w": width_ring, "x": x, "y": y, "dw": width_ring/duration/60, "dr": (1-radius_start)*radius_ring/duration/60, "color": color_ring});
+	}
+
+	function pop_update(){
+		ctx.strokeStyle = black;
+		ctx.lineWidth = 1;
+		for (var i=0; i<particle_list.length; i++){
+			ctx.fillStyle = particle_list[i].color;
+			drwCircle(particle_list[i].x, particle_list[i].y, particle_list[i].r, true);
+			particle_list[i].x += particle_list[i].dx;
+			particle_list[i].y += particle_list[i].dy;
+			particle_list[i].r -= particle_list[i].dr;
+		}
+		var transfer = [];
+		for (var i=0; i<particle_list.length; i++){
+			if (particle_list[i].r > 0){
+				transfer.push(particle_list[i]);
+			}
+		}
+		particle_list = [];
+		for (var i=0; i<transfer.length; i++){
+			particle_list.push(transfer[i]);
+		}
+		
+		for (var i = 0; i<ring_list.length; i++){
+			if (ring_list[i].w > 0){
+				ctx.strokeStyle = ring_list[i].color;
+				ctx.lineWidth = ring_list[i].w;
+				drwCircle(ring_list[i].x, ring_list[i].y, ring_list[i].r, false);
+				ring_list[i].r += ring_list[i].dr;
+				ring_list[i].w -= ring_list[i].dw;
+			}
+		}
+		transfer = [];
+		for (var i=0; i<ring_list.length; i++){
+			if (ring_list[i].w > 0){
+				transfer.push(ring_list[i]);
+			}
+		}
+		ring_list = [];
+		for (var i=0; i<transfer.length; i++){
+			ring_list.push(transfer[i]);
+		}
+	}
+
+	// fall animation
+	// adjustable coefficient
+	var g = 1000;
+	var touch_distance = 10;
+	var cell_width = 1024/36;
+	var bottom_line = 570;
+	// body
+	var fall_list = [];
+	function fall_init(shapeid, cell_img, x, y, target_y){
+		fall_list.push({"shapeid": shapeid, "cell_img": cell_img, "x": bkg_x+x*cell_width, "y": y, "target_y": bottom_line-42-target_y*cell_width, "v": -330});
+	}
+	
+	function fall_update(){
+		for (var i=0; i<fall_list.length; i++){
+			if (Math.abs(fall_list[i].y-fall_list[i].target_y) <= touch_distance){
+				fall_list[i].y = fall_list[i].target_y;
+				fall_list[i].v = 0;
+			}
+			for (var j=0; j<shape[fall_list[i].shapeid].length; j++){
+				ctx.drawImage(fall_list[i].cell_img, fall_list[i].x+shape[fall_list[i].shapeid][j][0]*cell_width, fall_list[i].y+shape[fall_list[i].shapeid][j][1]*cell_width, cell_width, cell_width);
+			}
+			if (Math.abs(fall_list[i].y-fall_list[i].target_y) > touch_distance){
+				fall_list[i].y += fall_list[i].v/60;
+				fall_list[i].v += g/60;
+			}
+		}
+	}
+
+	// current score
+	var eos_ = 0;
+	var atlas_ = 0;
+	var oceanus_ = 0;
+	var hyperion_ = 0;
+
+	// adjustable coefficient
+	var y_dev = 0.05*c.height;
+	var y_std = 0.135*c.height;
+	var y_diff = 42;
+	var ring_width_ = 7;
+	var ring_radius_ = 120;
+	var particle_radius_ = 33;
+	var duration_ = 0.33;
+	// operation
+	function oceanus(num_){
+		var num = num_;
+		for (var i = 0; i<num; i++){
+			var saver = y_std+linear_random(-1, 1)*y_dev;
+			waiting_list.push({"cd": i, "func": fall_init, "para": [setO[oceanus_][0], oceanus_cell, setO[oceanus_][1], saver, setO[oceanus_][2]]});
+			waiting_list.push({"cd": i, "func": pop_init, "para": [
+				(setO[oceanus_][1]+findSize(setO[oceanus_][0])[0]/2)*cell_width+bkg_x, 
+				saver+findSize(setO[oceanus_][0])[1]/2*cell_width-y_diff, ring_radius_, particle_radius_, ring_width_, black, blue, duration_]});
+			oceanus_++;
+		}
+	}
+
+	function hyperion(num_){
+		var num = num_;
+		for (var i = 0; i<num; i++){
+			var saver = y_std+linear_random(-1, 1)*y_dev;
+			waiting_list.push({"cd": i, "func": fall_init, "para": [setH[hyperion_][0], hyperion_cell, setH[hyperion_][1]+18, saver, setH[hyperion_][2]]});
+			waiting_list.push({"cd": i, "func": pop_init, "para": [
+				(setH[hyperion_][1]+findSize(setH[hyperion_][0])[0]/2+18)*cell_width+bkg_x, 
+				saver+findSize(setH[hyperion_][0])[1]/2*cell_width-y_diff, ring_radius_, particle_radius_, ring_width_, white, orange, duration_]});
+			hyperion_++;
+		}
+	}
+
+	function atlas(num_){
+		var num = num_;
+		for (var i = 0; i<num; i++){
+			var saver = y_std+linear_random(-1, 1)*y_dev;
+			waiting_list.push({"cd": i, "func": fall_init, "para": [setA[atlas_][0], atlas_cell, setA[atlas_][1]+9, saver, setA[atlas_][2]]});
+			waiting_list.push({"cd": i, "func": pop_init, "para": [
+				(setA[atlas_][1]+findSize(setA[atlas_][0])[0]/2+9)*cell_width+bkg_x, 
+				saver+findSize(setA[atlas_][0])[1]/2*cell_width-y_diff, ring_radius_, particle_radius_, ring_width_, black, green, duration_]});
+			atlas_++;
+		}
+	}
+
+	function eos(num_){
+		var num = num_;
+		for (var i = 0; i<num; i++){
+			var saver = y_std+linear_random(-1, 1)*y_dev;
+			waiting_list.push({"cd": i, "func": fall_init, "para": [setE[eos_][0], eos_cell, setE[eos_][1]+27, saver, setE[eos_][2]]});
+			waiting_list.push({"cd": i, "func": pop_init, "para": [
+				(setE[eos_][1]+findSize(setE[eos_][0])[0]/2+27)*cell_width+bkg_x, 
+				saver+findSize(setE[eos_][0])[1]/2*cell_width-y_diff, ring_radius_, particle_radius_, ring_width_, white, red, duration_]});
+			eos_++;
+		}
+	}
+
+	waiting_list = [];
+	function global_update(){
+		ctx.fillStyle = white;
+		ctx.fillRect(0, 0, c.width, c.height);
+		ctx.drawImage(bkg, bkg_x, 0, c.height/9*16, c.height);
+		
+		var i = 0;
+		while (i < waiting_list.length){
+			waiting_list[i].cd -= 1/60;
+			if (waiting_list[i].cd <= 0){
+				waiting_list[i].func.apply(null, waiting_list[i].para);
+				waiting_list.shift();
+			}else{
+				i++;
+			}
+		}
+	
+		ctx.font = "Bold 25px Copperplate Gothic Light";
+		ctx.textAlign = "center";
+		ctx.fillStyle = blue;
+		ctx.fillText("OCEANUS: "+oceanus_*100, bkg_x+128+15, bottom_line-12, 256);
+		ctx.fillStyle = orange;
+		ctx.fillText("HYPERION: "+hyperion_*100, bkg_x+128*5+12,  bottom_line-12, 256);
+		ctx.fillStyle = green;
+		ctx.fillText("ATLAS: "+atlas_*100, bkg_x+128*3+15, bottom_line-12, 256);
+		ctx.fillStyle = red;
+		ctx.fillText("EOS: "+eos_*100, bkg_x+128*7+15, bottom_line-12, 256);
+	}
+
+	// main
+	function main(){
+		global_update();
+		if (particle_list.length > 0 || ring_list.length > 0){
+			pop_update();
+		}
+		fall_update();
+		requestAnimationFrame(main);
+	}
+	main();
+
+	// testing below
+	// testing below
+	// testing below
+	var mx = -100;
+	var my = -100;
+	var pmx = -100;
+	var pmy = -100;
+	var qmx = c.getBoundingClientRect().left;
+	var qmy = c.getBoundingClientRect().top;
+	function update() {
+		mx = pmx - qmx;
+		my = pmy - qmy;
+	}
+	window.onscroll = function(event){
+		event = event || window.event;
+		qmx = c.getBoundingClientRect().left;
+		qmy = c.getBoundingClientRect().top;
+		update();
+	}
+	window.onmousemove = function(event){
+		event = event || window.event;
+		pmx = event.clientX;
+		pmy = event.clientY;
+		update();
+	}
+	window.onclick = function(event){
+		return null;
+		waiting_list.push({"cd": 1, "func": pop_init, "para": [mx, my, 100, 25, 5, green, blue, 0.3]});
+		waiting_list.push({"cd": 1, "func": fall_init, "para": [0, eos_cell, (mx-bkg_x)/cell_width, my, 2]});
+	}
+</script>
+    
+</body>
+</html>
